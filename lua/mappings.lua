@@ -179,13 +179,22 @@ map("n", "mm", "gcc", { desc = "Toggle comment", remap = true })
 
 -- Reload
 function _G.reload_config()
+  local modules = { "options", "mappings", "autocmds", "utils" }
   local reload = require("plenary.reload").reload_module
-  reload("me", false)
+  for _, m in ipairs(modules) do
+    reload(m)
+  end
   dofile(vim.env.MYVIMRC)
   vim.notify("Nvim configuration reloaded!", vim.log.levels.INFO)
 end
 
+function _G.full_reload()
+  require("lazy").sync()
+  _G.reload_config()
+end
+
 map("n", "<leader>hr", _G.reload_config, { desc = "Reload configuration" })
+map("n", "<leader>hR", _G.full_reload, { desc = "Full reload (sync plugins + reload config)" })
 map("n", "<leader>hk", function() require("telescope.builtin").keymaps() end, { desc = "View keybindings" })
 
 -- Esc to clear hlsearch
@@ -193,6 +202,7 @@ map("n", "<Esc>", "<cmd>nohlsearch<CR>")
 
 -- Dired
 vim.api.nvim_create_user_command("Ex", "Dired", { force = true })
+vim.api.nvim_create_user_command("Reload", _G.full_reload, {})
 
 -- =============================================================================
 -- Which-key groups
