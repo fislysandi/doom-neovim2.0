@@ -67,13 +67,11 @@ local opts = {
     },
 }
 
-local servers = opts.servers
-
 local function setup(server)
     local capabilities = require("cmp_nvim_lsp").default_capabilities(vim.lsp.protocol.make_client_capabilities())
     local server_opts = vim.tbl_deep_extend("force", {
         capabilities = vim.deepcopy(capabilities),
-    }, servers[server] or {})
+    }, opts.servers[server] or {})
 
     if opts.setup[server] then
         if opts.setup[server](server, server_opts) then
@@ -102,7 +100,7 @@ do
 end
 
 local ensure_installed = {} ---@type string[]
-for server, server_opts in pairs(servers) do
+for server, server_opts in pairs(opts.servers) do
     if server_opts then
         server_opts = server_opts == true and {} or server_opts
         -- run manual setup if mason=false or if this is a server that cannot be installed with mason-lspconfig
@@ -119,6 +117,17 @@ end
 require("mason-lspconfig").setup({
     ensure_installed = ensure_installed,
     automatic_installation = true,
-    -- Whether installed servers should automatically be enabled via `:h vim.lsp.enable()`.
-    automatic_enable = true,
+})
+
+require("mason-lspconfig").setup_handlers({
+    function(server_name)
+        setup(server_name)
+    end,
+})
+
+
+require("mason-lspconfig").setup_handlers({
+    function(server_name)
+        setup(server_name)
+    end,
 })
