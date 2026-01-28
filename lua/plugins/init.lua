@@ -243,6 +243,19 @@ local builtin_plugins = {
         version = "*",
         opts = {},
     },
+    -- Dired
+    {
+        "X3eRo0/dired.nvim",
+        dependencies = { "nvim-tree/nvim-web-devicons" },
+        config = function()
+            require("dired").setup({
+                path_separator = "/",
+                show_banner = false,
+                show_icons = true,
+                show_hidden = true,
+            })
+        end,
+    },
 }
 
 local exist, custom = pcall(require, "custom")

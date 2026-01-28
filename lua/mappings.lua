@@ -14,52 +14,52 @@ local map = vim.keymap.set
 
 -- Git Jump: Find all git repositories in HOME and jump to them
 local function git_jump()
-    local ok, pickers = pcall(require, "telescope.pickers")
-    if not ok then return end
-    local finders = require("telescope.finders")
-    local conf = require("telescope.config").values
-    local actions = require("telescope.actions")
-    local action_state = require("telescope.actions.state")
-    local home = vim.fn.expand("$HOME")
+  local ok, pickers = pcall(require, "telescope.pickers")
+  if not ok then return end
+  local finders = require("telescope.finders")
+  local conf = require("telescope.config").values
+  local actions = require("telescope.actions")
+  local action_state = require("telescope.actions.state")
+  local home = vim.fn.expand("$HOME")
 
-    pickers.new({}, {
-        prompt_title = "Git Jump",
-        finder = finders.new_oneshot_job({
-            "fd",
-            "--hidden",
-            "--type", "d",
-            "--glob", ".git",
-            home,
-            "--exclude", "Library",
-            "--exclude", "AppData",
-            "--exclude", "node_modules",
-            "--exclude", "scoop",
-            "--exclude", ".cache",
-            "--exclude", ".local",
-        }, {
-            entry_maker = function(entry)
-                local dir = vim.fn.fnamemodify(entry, ":p:h:h")
-                return {
-                    value = dir,
-                    display = dir:gsub(home, "~"),
-                    ordinal = dir,
-                }
-            end
-        }),
-        sorter = conf.generic_sorter({}),
-        attach_mappings = function(prompt_bufnr, map)
-            actions.select_default:replace(function()
-                actions.close(prompt_bufnr)
-                local selection = action_state.get_selected_entry()
-                if selection then
-                    vim.cmd("cd " .. selection.value)
-                    vim.notify("Jumped to " .. selection.value)
-                    require("telescope.builtin").find_files({ cwd = selection.value })
-                end
-            end)
-            return true
-        end,
-    }):find()
+  pickers.new({}, {
+    prompt_title = "Git Jump",
+    finder = finders.new_oneshot_job({
+      "fd",
+      "--hidden",
+      "--type", "d",
+      "--glob", ".git",
+      home,
+      "--exclude", "Library",
+      "--exclude", "AppData",
+      "--exclude", "node_modules",
+      "--exclude", "scoop",
+      "--exclude", ".cache",
+      "--exclude", ".local",
+    }, {
+      entry_maker = function(entry)
+        local dir = vim.fn.fnamemodify(entry, ":p:h:h")
+        return {
+          value = dir,
+          display = dir:gsub(home, "~"),
+          ordinal = dir,
+        }
+      end
+    }),
+    sorter = conf.generic_sorter({}),
+    attach_mappings = function(prompt_bufnr, map)
+      actions.select_default:replace(function()
+        actions.close(prompt_bufnr)
+        local selection = action_state.get_selected_entry()
+        if selection then
+          vim.cmd("cd " .. selection.value)
+          vim.notify("Jumped to " .. selection.value)
+          require("telescope.builtin").find_files({ cwd = selection.value })
+        end
+      end)
+      return true
+    end,
+  }):find()
 end
 
 -- =============================================================================
@@ -67,8 +67,9 @@ end
 -- =============================================================================
 
 -- Quick actions
-map("n", "<leader>SPC", function() require("telescope.builtin").find_files() end, { desc = "Find file in project" })
-map("n", "<leader>.", function() require("telescope.builtin").find_files({ cwd = vim.fn.expand("%:p:h") }) end, { desc = "Browse files" })
+map("n", "<leader><leader>", git_jump, { desc = "Git jump (find git repos)" })
+map("n", "<leader>.", function() require("telescope.builtin").find_files({ cwd = vim.fn.expand("%:p:h") }) end,
+  { desc = "Browse files" })
 map("n", "<leader>,", function() require("telescope.builtin").buffers() end, { desc = "Switch buffer" })
 map("n", "<leader>/", function() require("telescope.builtin").live_grep() end, { desc = "Search project" })
 map("n", "<leader>:", function() require("telescope.builtin").command_history() end, { desc = "Command history" })
@@ -109,10 +110,10 @@ map("n", "K", vim.lsp.buf.hover, { desc = "Hover documentation" })
 -- [f] File
 -- =============================================================================
 map("n", "<leader>ff", function() require("telescope.builtin").find_files() end, { desc = "Find file" })
-map("n", "<leader>fg", git_jump, { desc = "Git jump (find git repos)" })
 map("n", "<leader>fs", "<cmd>write<CR>", { desc = "Save file" })
 map("n", "<leader>fr", function() require("telescope.builtin").oldfiles() end, { desc = "Recent files" })
-map("n", "<leader>fp", function() require("telescope.builtin").find_files({ cwd = vim.fn.stdpath("config") }) end, { desc = "Open private config" })
+map("n", "<leader>fp", function() require("telescope.builtin").find_files({ cwd = vim.fn.stdpath("config") }) end,
+  { desc = "Open private config" })
 map("n", "<leader>fD", function() vim.fn.delete(vim.api.nvim_buf_get_name(0)) end, { desc = "Delete this file" })
 
 -- =============================================================================
@@ -126,11 +127,12 @@ map("n", "<leader>gd", function() require("gitsigns").diffthis() end, { desc = "
 -- =============================================================================
 -- [o] Open
 -- =============================================================================
-map("n", "<leader>ot", function() 
-    local height = math.floor(vim.o.lines / 2)
-    vim.cmd("belowright split | resize " .. height .. " | terminal")
+map("n", "<leader>ot", function()
+  local height = math.floor(vim.o.lines / 2)
+  vim.cmd("belowright split | resize " .. height .. " | terminal")
 end, { desc = "Open terminal" })
-map("n", "<leader>of", function() require("mini.files").open(vim.api.nvim_buf_get_name(0), true) end, { desc = "File manager (mini.files)" })
+map("n", "<leader>of", function() require("mini.files").open(vim.api.nvim_buf_get_name(0), true) end,
+  { desc = "File manager (mini.files)" })
 
 -- AI (OpenCode)
 map("n", "<leader>oo", function() require("opencode").toggle() end, { desc = "Toggle OpenCode" })
@@ -146,7 +148,8 @@ map("n", "<leader>pp", function() require("telescope.builtin").planets() end, { 
 -- =============================================================================
 -- [s] Search
 -- =============================================================================
-map("n", "<leader>ss", function() require("telescope.builtin").current_buffer_fuzzy_find() end, { desc = "Search buffer" })
+map("n", "<leader>ss", function() require("telescope.builtin").current_buffer_fuzzy_find() end,
+  { desc = "Search buffer" })
 map("n", "<leader>sp", function() require("telescope.builtin").live_grep() end, { desc = "Search project" })
 map("n", "<leader>sd", function() require("telescope.builtin").diagnostics() end, { desc = "Search diagnostics" })
 map("n", "<leader>sh", function() require("telescope.builtin").help_tags() end, { desc = "Search help" })
@@ -176,31 +179,35 @@ map("n", "mm", "gcc", { desc = "Toggle comment", remap = true })
 
 -- Reload
 function _G.reload_config()
-    local reload = require("plenary.reload").reload_module
-    reload("me", false)
-    dofile(vim.env.MYVIMRC)
-    vim.notify("Nvim configuration reloaded!", vim.log.levels.INFO)
+  local reload = require("plenary.reload").reload_module
+  reload("me", false)
+  dofile(vim.env.MYVIMRC)
+  vim.notify("Nvim configuration reloaded!", vim.log.levels.INFO)
 end
+
 map("n", "<leader>hr", _G.reload_config, { desc = "Reload configuration" })
 map("n", "<leader>hk", function() require("telescope.builtin").keymaps() end, { desc = "View keybindings" })
 
 -- Esc to clear hlsearch
 map("n", "<Esc>", "<cmd>nohlsearch<CR>")
 
+-- Dired
+vim.api.nvim_create_user_command("Ex", "Dired", { force = true })
+
 -- =============================================================================
 -- Which-key groups
 -- =============================================================================
 local ok, wk = pcall(require, "which-key")
 if ok then
-    wk.add({
-        { "<leader>b", group = "buffer" },
-        { "<leader>c", group = "code" },
-        { "<leader>f", group = "file" },
-        { "<leader>g", group = "git" },
-        { "<leader>h", group = "help/reload" },
-        { "<leader>o", group = "open" },
-        { "<leader>p", group = "project" },
-        { "<leader>s", group = "search" },
-        { "<leader>w", group = "window" },
-    })
+  wk.add({
+    { "<leader>b", group = "buffer" },
+    { "<leader>c", group = "code" },
+    { "<leader>f", group = "file" },
+    { "<leader>g", group = "git" },
+    { "<leader>h", group = "help/reload" },
+    { "<leader>o", group = "open" },
+    { "<leader>p", group = "project" },
+    { "<leader>s", group = "search" },
+    { "<leader>w", group = "window" },
+  })
 end
