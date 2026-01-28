@@ -131,8 +131,11 @@ map("n", "<leader>ot", function()
     vim.cmd("belowright split | resize " .. height .. " | terminal")
 end, { desc = "Open terminal" })
 map("n", "<leader>of", function() require("mini.files").open(vim.api.nvim_buf_get_name(0), true) end, { desc = "File manager (mini.files)" })
-map("n", "<leader>oo", "<cmd>OpenCode<CR>", { desc = "OpenCode" })
-map("n", "<leader>oc", "<cmd>OpenCodeChat<CR>", { desc = "OpenCode Chat" })
+
+-- AI (OpenCode)
+map("n", "<leader>oo", function() require("opencode").toggle() end, { desc = "Toggle OpenCode" })
+map("n", "<leader>oa", function() require("opencode").ask() end, { desc = "Ask OpenCode" })
+map("n", "<leader>os", function() require("opencode").select() end, { desc = "OpenCode Select" })
 
 -- =============================================================================
 -- [p] Project
