@@ -119,15 +119,12 @@ require("mason-lspconfig").setup({
     automatic_installation = true,
 })
 
-require("mason-lspconfig").setup_handlers({
-    function(server_name)
-        setup(server_name)
-    end,
-})
-
-
-require("mason-lspconfig").setup_handlers({
-    function(server_name)
-        setup(server_name)
-    end,
-})
+-- Setup handlers only if the function exists (for compatibility with different mason-lspconfig versions)
+local mlsp = require("mason-lspconfig")
+if mlsp.setup_handlers then
+    mlsp.setup_handlers({
+        function(server_name)
+            setup(server_name)
+        end,
+    })
+end

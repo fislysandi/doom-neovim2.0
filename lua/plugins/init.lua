@@ -246,7 +246,7 @@ local builtin_plugins = {
     -- Dired
     {
         "X3eRo0/dired.nvim",
-        dependencies = { "nvim-tree/nvim-web-devicons" },
+        dependencies = { "nvim-tree/nvim-web-devicons", "MunifTanjim/nui.nvim" },
         config = function()
             require("dired").setup({
                 path_separator = "/",
