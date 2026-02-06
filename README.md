@@ -1,61 +1,90 @@
-<div align="center">
-  <h1>doom-neovim2.0</h1>
-  <p>A powerful, Doom Emacs-inspired Neovim configuration built with Lua.</p>
-  <p>
-    <img alt="License" src="https://img.shields.io/badge/License-GPLv3-blue.svg?style=for-the-badge" />
-    <img alt="Neovim version" src="https://img.shields.io/badge/Neovim-0.8+-57A143?style=for-the-badge&logo=neovim" />
-  </p>
-</div>
+# Neovim Config - Fresh Start
 
-## 1. Introduction
+A minimal, modern Neovim configuration built from scratch.
 
-**doom-neovim2.0** is a personal Neovim configuration designed to provide a "Doom Emacs" experience—keyboard-centric, fast, and feature-rich. It is optimized for cross-platform use (macOS, Linux, Windows) and managed via [Nutuck](https://github.com/fislysandi/nutuck).
+## Structure
 
-Sourced and adapted from [ntk148v/neovim-config](https://github.com/ntk148v/neovim-config).
-
-## 2. Features
-
-- **Blazing Fast**: Uses `lazy.nvim` for deferred plugin loading.
-- **Doom Mappings**: Space-based leader key with structured groups (`SPC f` for files, `SPC b` for buffers, etc.).
-- **LSP & Autocomplete**: Powered by `mason.nvim`, `nvim-lspconfig`, and `nvim-cmp`.
-- **Treesitter**: High-performance syntax highlighting and code navigation.
-- **Telescope**: Unified interface for searching files, buffers, git, and help.
-- **File Manager**: Uses `mini.files` for a unique, intuitive file system navigation.
-- **Appearance**: Defaults to the elegant `rose-pine` theme.
-
-## 3. Installation
-
-This configuration is intended to be used as part of a dotfiles repository managed by [Nutuck](https://github.com/fislysandi/nutuck).
-
-### Manual Installation
-
-```bash
-# Backup existing config
-mv ~/.config/nvim ~/.config/nvim.bak
-
-# Clone doom-neovim2.0
-git clone https://github.com/fislysandi/doom-neovim2.0.git ~/.config/nvim
+```
+.
+├── init.lua                 # Entry point
+├── lua/
+│   ├── core/
+│   │   ├── options.lua      # Vim options
+│   │   ├── keymaps.lua      # Key mappings
+│   │   └── autocmds.lua     # Autocommands
+│   └── plugins/
+│       └── init.lua         # Plugin specifications
+└── README.md
 ```
 
-## 4. Keymaps (Highlights)
+## Plugins
 
-| Shortcut | Description |
-| :--- | :--- |
-| `<leader> SPC` | Find file in project |
-| `<leader> /` | Search project (Live Grep) |
-| `<leader> ,` | Switch buffer |
-| `<leader> .` | Browse files (current folder) |
-| `<leader> h k` | **View all keybindings** (Help menu) |
-| `<leader> c c` | Toggle comment (Doom-style) |
-| `<leader> o t` | Open terminal |
-| `<leader> f s` | Save file |
-| `Ctrl + j/k` | Navigate completion and search menus |
+- **Colorscheme**: tokyonight.nvim
+- **Syntax**: nvim-treesitter
+- **File Explorer**: mini.files
+- **Fuzzy Finder**: telescope.nvim
+- **LSP**: nvim-lspconfig + mason.nvim
+- **Completion**: nvim-cmp
+- **Status Line**: lualine.nvim
+- **Git**: gitsigns.nvim
+- **Keymap Helper**: which-key.nvim
 
-## 5. Customization
+## Keymaps
 
-You can extend this configuration by creating a `lua/custom.lua` file. Check `lua/sample_custom.lua` for an example of how to add extra plugins and settings without modifying the core files.
+### General
+- `<leader>w` - Save file
+- `<leader>q` - Quit
+- `<leader>Q` - Force quit all
+- `<Esc>` - Clear search highlighting
 
----
+### Navigation
+- `<C-h/j/k/l>` - Window navigation
+- `<C-d/u>` - Scroll and center cursor
+- `n/N` - Next/previous search result (centered)
 
-**Original Author**: [Kien Nguyen Tuan](https://github.com/ntk148v)  
-**License**: GPLv3
+### Buffers
+- `<leader>bn` - Next buffer
+- `<leader>bp` - Previous buffer
+- `<leader>bd` - Delete buffer
+
+### Telescope
+- `<leader>ff` - Find files
+- `<leader>fg` - Live grep
+- `<leader>fb` - Find buffers
+- `<leader>fh` - Help tags
+
+### LSP
+- `gd` - Go to definition
+- `gr` - Show references
+- `K` - Hover documentation
+- `<leader>rn` - Rename
+- `<leader>ca` - Code action
+- `<leader>f` - Format
+
+### File Explorer
+- `<leader>e` - Open mini.files
+
+## Installation
+
+1. Backup your existing config:
+   ```bash
+   mv ~/.config/nvim ~/.config/nvim.backup
+   ```
+
+2. Clone this repository:
+   ```bash
+   git clone https://github.com/fislysandi/nvim-config-fresh.git ~/.config/nvim
+   ```
+
+3. Start Neovim:
+   ```bash
+   nvim
+   ```
+
+   lazy.nvim will automatically install all plugins on first start.
+
+## Requirements
+
+- Neovim 0.9+
+- Git
+- A Nerd Font (for icons)

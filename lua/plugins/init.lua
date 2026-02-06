@@ -1,235 +1,181 @@
---
--- ███╗   ██╗███████╗ ██████╗ ██╗   ██╗██╗███╗   ███╗
--- ████╗  ██║██╔════╝██╔═══██╗██║   ██║██║████╗ ████║
--- ██╔██╗ ██║█████╗  ██║   ██║██║   ██║██║██╔████╔██║
--- ██║╚██╗██║██╔══╝  ██║   ██║╚██╗ ██╔╝██║██║╚██╔╝██║
--- ██║ ╚████║███████╗╚██████╔╝ ╚████╔╝ ██║██║ ╚═╝ ██║
--- ╚═╝  ╚═══╝╚══════╝ ╚═════╝   ╚═══╝  ╚═╝╚═╝     ╚═╝
---
--- File: plugins/init.lua
--- Description: init plugins config
+-- lua/plugins/init.lua - Plugin Specifications
+-- Each plugin is defined in its own file in lua/plugins/
 
--- Built-in plugins
-local builtin_plugins = {
-    { "nvim-lua/plenary.nvim" },
-    -- Miscellaneous useful functions
-    -- mini.misc
+return {
+    -- Colorscheme
     {
-        "nvim-mini/mini.misc",
-        version = "*",
-        config = function(_, opts)
-            require("mini.misc").setup()
-            -- Synchronize terminal emulator background with Neovim's background to remove
-            -- possibly different color padding around Neovim instance
-            MiniMisc.setup_termbg_sync()
+        "folke/tokyonight.nvim",
+        lazy = false,
+        priority = 1000,
+        config = function()
+            vim.cmd([[colorscheme tokyonight-night]])
         end,
     },
-    -- File explore
-    -- mini.files
+
+    -- Treesitter for syntax highlighting
     {
-        "nvim-mini/mini.files",
+        "nvim-treesitter/nvim-treesitter",
+        build = ":TSUpdate",
+        event = { "BufReadPost", "BufNewFile" },
+        config = function()
+            require("nvim-treesitter.configs").setup({
+                ensure_installed = { "lua", "vim", "vimdoc" },
+                auto_install = true,
+                highlight = { enable = true },
+                indent = { enable = true },
+            })
+        end,
+    },
+
+    -- File explorer - Mini.files
+    {
+        "echasnovski/mini.files",
+        version = "*",
         lazy = false,
-        opts = require("plugins.configs.mini-files"),
-        config = function(_, opts)
-            require("mini.files").setup(opts)
+        config = function()
+            require("mini.files").setup()
+            vim.keymap.set("n", "<leader>e", function()
+                require("mini.files").open(vim.api.nvim_buf_get_name(0))
+            end, { desc = "Open file explorer" })
+        end,
+    },
 
-            local show_dotfiles = true
-            local filter_show = function(_)
-                return true
-            end
-            local filter_hide = function(fs_entry)
-                return not vim.startswith(fs_entry.name, ".")
-            end
+    -- Fuzzy finder - Telescope
+    {
+        "nvim-telescope/telescope.nvim",
+        dependencies = { "nvim-lua/plenary.nvim" },
+        cmd = "Telescope",
+        keys = {
+            { "<leader>ff", "<cmd>Telescope find_files<CR>", desc = "Find files" },
+            { "<leader>fg", "<cmd>Telescope live_grep<CR>", desc = "Live grep" },
+            { "<leader>fb", "<cmd>Telescope buffers<CR>", desc = "Find buffers" },
+            { "<leader>fh", "<cmd>Telescope help_tags<CR>", desc = "Help tags" },
+        },
+        config = function()
+            require("telescope").setup({
+                defaults = {
+                    mappings = {
+                        i = {
+                            ["<C-j>"] = "move_selection_next",
+                            ["<C-k>"] = "move_selection_previous",
+                        },
+                    },
+                },
+            })
+        end,
+    },
 
-            local toggle_dotfiles = function()
-                show_dotfiles = not show_dotfiles
-                local new_filter = show_dotfiles and filter_show or filter_hide
-                require("mini.files").refresh({ content = { filter = new_filter } })
-            end
-
-            local map_split = function(buf_id, lhs, direction, close_on_file)
-                local rhs = function()
-                    local new_target_window
-                    local cur_target_window = require("mini.files").get_explorer_state().target_window
-                    if cur_target_window ~= nil then
-                        vim.api.nvim_win_call(cur_target_window, function()
-                            vim.cmd("belowright " .. direction .. " split")
-                            new_target_window = vim.api.nvim_get_current_win()
-                        end)
-
-                        require("mini.files").set_target_window(new_target_window)
-                        require("mini.files").go_in({ close_on_file = close_on_file })
-                    end
-                end
-
-                local desc = "Open in " .. direction .. " split"
-                if close_on_file then
-                    desc = desc .. " and close"
-                end
-                vim.keymap.set("n", lhs, rhs, { buffer = buf_id, desc = desc })
-            end
-
-            vim.api.nvim_create_autocmd("User", {
-                pattern = "MiniFilesBufferCreate",
+    -- LSP Configuration
+    {
+        "neovim/nvim-lspconfig",
+        event = { "BufReadPre", "BufNewFile" },
+        dependencies = {
+            "williamboman/mason.nvim",
+            "williamboman/mason-lspconfig.nvim",
+        },
+        config = function()
+            require("mason").setup()
+            require("mason-lspconfig").setup({
+                ensure_installed = { "lua_ls" },
+            })
+            
+            local lspconfig = require("lspconfig")
+            local capabilities = vim.lsp.protocol.make_client_capabilities()
+            
+            -- Setup servers
+            require("mason-lspconfig").setup_handlers({
+                function(server_name)
+                    lspconfig[server_name].setup({
+                        capabilities = capabilities,
+                    })
+                end,
+            })
+            
+            -- LSP keymaps
+            vim.api.nvim_create_autocmd("LspAttach", {
                 callback = function(args)
-                    local buf_id = args.data.buf_id
-
-                    vim.keymap.set(
-                        "n",
-                        opts.mappings and opts.mappings.toggle_hidden or "g.",
-                        toggle_dotfiles,
-                        { buffer = buf_id, desc = "Toggle hidden files" }
-                    )
-
-                    map_split(buf_id, opts.mappings and opts.mappings.go_in_horizontal or "<C-w>s", "horizontal", false)
-                    map_split(buf_id, opts.mappings and opts.mappings.go_in_vertical or "<C-w>v", "vertical", false)
-                    map_split(
-                        buf_id,
-                        opts.mappings and opts.mappings.go_in_horizontal_plus or "<C-w>S",
-                        "horizontal",
-                        true
-                    )
-                    map_split(buf_id, opts.mappings and opts.mappings.go_in_vertical_plus or "<C-w>V", "vertical", true)
+                    local bufnr = args.buf
+                    local opts = { buffer = bufnr, silent = true }
+                    
+                    vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
+                    vim.keymap.set("n", "gr", vim.lsp.buf.references, opts)
+                    vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
+                    vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
+                    vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, opts)
+                    vim.keymap.set("n", "<leader>f", function()
+                        vim.lsp.buf.format({ async = true })
+                    end, opts)
                 end,
             })
         end,
     },
-    -- Formatter
-    -- Lightweight yet powerful formatter plugin for Neovim
-    {
-        "stevearc/conform.nvim",
-        opts = {
-            formatters_by_ft = { lua = { "stylua" } },
-        },
-    },
-    -- Git integration for buffers
-    {
-        "lewis6991/gitsigns.nvim",
-        event = { "BufReadPost", "BufNewFile", "BufWritePost" },
-        opts = require("plugins.configs.gitsigns"),
-    },
-    -- Treesitter interface
-    {
-        "nvim-treesitter/nvim-treesitter",
-        version = false, -- last release is way too old and doesn't work on Windows
-        event = { "BufReadPost", "BufNewFile", "BufWritePost" },
-        cmd = { "TSInstall", "TSBufEnable", "TSBufDisable", "TSModuleInfo" },
-        build = ":TSUpdate",
-        opts = require("plugins.configs.treesitter"),
-    },
-    -- Telescope
-    -- Find, Filter, Preview, Pick. All lua, all the time.
-    {
-        "nvim-telescope/telescope.nvim",
-        dependencies = {
-            "nvim-lua/plenary.nvim",
-            "nvim-treesitter/nvim-treesitter",
-            {
-                "nvim-telescope/telescope-fzf-native.nvim",
-                build = vim.fn.executable("make") == 1 and "make" or "cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release && cmake --build build --config Release && cmake --install build --prefix build",
-            },
-        },
-        cmd = "Telescope",
-        config = function(_)
-            local opts = require("plugins.configs.telescope")
-            require("telescope").setup(opts)
-            -- To get fzf loaded and working with telescope, you need to call
-            -- load_extension, somewhere after setup function:
-            require("telescope").load_extension("fzf")
-        end,
-    },
-    -- Statusline
-    -- A blazing fast and easy to configure neovim statusline plugin written in pure lua.
-    {
-        "nvim-lualine/lualine.nvim",
-        config = function()
-            require("plugins.configs.lualine")
-        end,
-    },
-    -- colorscheme
-    {
-        -- Rose-pine - Soho vibes for Neovim
-        "rose-pine/neovim",
-        name = "rose-pine",
-        opts = {
-            dark_variant = "main",
-        },
-    },
-    -- LSP stuffs
-    -- Portable package manager for Neovim that runs everywhere Neovim runs.
-    -- Easily install and manage LSP servers, DAP servers, linters, and formatters.
-    {
-        "williamboman/mason.nvim",
-        cmd = { "Mason", "MasonInstall", "MasonInstallAll", "MasonUninstall", "MasonUninstallAll", "MasonLog" },
-        config = function()
-            require("plugins.configs.mason")
-        end,
-    },
-    {
-        "williamboman/mason-lspconfig.nvim",
-    },
-    {
-        "nvimtools/none-ls.nvim",
-        event = { "BufReadPre", "BufNewFile" },
-        dependencies = { "nvimtools/none-ls-extras.nvim" },
-        lazy = true,
-        config = function()
-            require("plugins.configs.null-ls")
-        end,
-    },
-    {
-        "neovim/nvim-lspconfig",
-        event = "VimEnter",
-        lazy = false,
-        config = function()
-            require("plugins.configs.lspconfig")
-        end,
-    },
+
+    -- Autocompletion
     {
         "hrsh7th/nvim-cmp",
         event = "InsertEnter",
         dependencies = {
-            {
-                -- snippet plugin
-                "L3MON4D3/LuaSnip",
-                dependencies = "rafamadriz/friendly-snippets",
-                opts = { history = true, updateevents = "TextChanged,TextChangedI" },
-                config = function(_, opts)
-                    require("luasnip").config.set_config(opts)
-                    require("plugins.configs.luasnip")
-                end,
-            },
-
-            -- autopairing of (){}[] etc
-            { "windwp/nvim-autopairs" },
-
-            -- cmp sources plugins
-            {
-                "saadparwaiz1/cmp_luasnip",
-                "hrsh7th/cmp-nvim-lua",
-                "hrsh7th/cmp-nvim-lsp",
-                "hrsh7th/cmp-buffer",
-                "hrsh7th/cmp-path",
-                "onsails/lspkind.nvim",
-            },
+            "hrsh7th/cmp-nvim-lsp",
+            "hrsh7th/cmp-buffer",
+            "hrsh7th/cmp-path",
+            "L3MON4D3/LuaSnip",
+            "saadparwaiz1/cmp_luasnip",
         },
-        opts = function()
-            return require("plugins.configs.cmp")
+        config = function()
+            local cmp = require("cmp")
+            local luasnip = require("luasnip")
+            
+            cmp.setup({
+                snippet = {
+                    expand = function(args)
+                        luasnip.lsp_expand(args.body)
+                    end,
+                },
+                mapping = cmp.mapping.preset.insert({
+                    ["<C-b>"] = cmp.mapping.scroll_docs(-4),
+                    ["<C-f>"] = cmp.mapping.scroll_docs(4),
+                    ["<C-Space>"] = cmp.mapping.complete(),
+                    ["<C-e>"] = cmp.mapping.abort(),
+                    ["<CR>"] = cmp.mapping.confirm({ select = true }),
+                    ["<C-j>"] = cmp.mapping.select_next_item(),
+                    ["<C-k>"] = cmp.mapping.select_prev_item(),
+                }),
+                sources = cmp.config.sources({
+                    { name = "nvim_lsp" },
+                    { name = "luasnip" },
+                }, {
+                    { name = "buffer" },
+                    { name = "path" },
+                }),
+            })
         end,
     },
-    -- OpenCode AI Integration
+
+    -- Status line
     {
-        "NickvanDyke/opencode.nvim",
-        event = "VeryLazy",
-    },
-    -- Colorizer
-    {
-        "NvChad/nvim-colorizer.lua",
-        config = function(_)
-            require("colorizer").setup()
+        "nvim-lualine/lualine.nvim",
+        dependencies = { "nvim-tree/nvim-web-devicons" },
+        config = function()
+            require("lualine").setup({
+                options = {
+                    theme = "tokyonight",
+                    component_separators = "",
+                    section_separators = "",
+                },
+            })
         end,
     },
-    -- Keymappings
+
+    -- Git signs
+    {
+        "lewis6991/gitsigns.nvim",
+        event = { "BufReadPre", "BufNewFile" },
+        config = function()
+            require("gitsigns").setup()
+        end,
+    },
+
+    -- Which-key for keymap hints
     {
         "folke/which-key.nvim",
         event = "VeryLazy",
@@ -237,74 +183,4 @@ local builtin_plugins = {
             require("which-key").setup()
         end,
     },
-    -- Commment
-    {
-        "echasnovski/mini.comment",
-        version = "*",
-        opts = {},
-    },
-    -- Dired
-    {
-        "X3eRo0/dired.nvim",
-        dependencies = { "nvim-tree/nvim-web-devicons", "MunifTanjim/nui.nvim" },
-        config = function()
-            require("dired").setup({
-                path_separator = "/",
-                show_banner = false,
-                show_icons = true,
-                show_hidden = true,
-            })
-        end,
-    },
 }
-
-local exist, custom = pcall(require, "custom")
-local custom_plugins = exist and type(custom) == "table" and custom.plugins or {}
-
--- Check if there is any custom plugins
--- local ok, custom_plugins = pcall(require, "plugins.custom")
-require("lazy").setup({
-    spec = { builtin_plugins, custom_plugins },
-    lockfile = vim.fn.stdpath("config") .. "/lazy-lock.json", -- lockfile generated after running update.
-    defaults = {
-        lazy = false, -- should plugins be lazy-loaded?
-        version = nil,
-        -- version = "*", -- enable this to try installing the latest stable versions of plugins
-    },
-    ui = {
-        icons = {
-            ft = "",
-            lazy = "󰂠",
-            loaded = "",
-            not_loaded = "",
-        },
-    },
-    install = {
-        -- install missing plugins on startup
-        missing = true,
-        -- try to load one of these colorschemes when starting an installation during startup
-        colorscheme = { "rose-pine", "habamax" },
-    },
-    checker = {
-        -- automatically check for plugin updates
-        enabled = true,
-        -- get a notification when new updates are found
-        -- disable it as it's too annoying
-        notify = false,
-        -- check for updates every day
-        frequency = 86400,
-    },
-    change_detection = {
-        -- automatically check for config file changes and reload the ui
-        enabled = true,
-        -- get a notification when changes are found
-        -- disable it as it's too annoying
-        notify = false,
-    },
-    performance = {
-        cache = {
-            enabled = true,
-        },
-    },
-    state = vim.fn.stdpath("state") .. "/lazy/state.json", -- state info for checker and other things
-})
